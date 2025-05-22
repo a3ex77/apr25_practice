@@ -35,14 +35,14 @@ export const App = () => {
       : products.filter(product => product.user.id === selectedUserId);
 
   const finalFilteredProducts =
-    searchQuery === ''
-      ? filteredProducts
-      : filteredProducts.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())); // prettier-ignore
+      searchQuery === ''
+        ? filteredProducts
+        : filteredProducts.filter(product =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase())); // prettier-ignore
 
-  const handleSearchChange = event => {
+  function handleSearchChange(event) {
     setSearchQuery(event.target.value);
-  };
+  }
 
   const handleClearSearch = () => {
     setSearchQuery('');
@@ -54,6 +54,7 @@ export const App = () => {
     setSelectedUserId(null);
     setSearchQuery('');
   };
+
 
   return (
     <div className="section">
