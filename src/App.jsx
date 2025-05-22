@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/accessible-emoji */
 import React, { useState } from 'react';
 import classNames from 'classnames';
 
@@ -29,7 +28,6 @@ const products = productsFromServers.map(product => {
 export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
 
   const filteredProducts =
     selectedUserId === null
@@ -40,8 +38,7 @@ export const App = () => {
     searchQuery === ''
       ? filteredProducts
       : filteredProducts.filter(product =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())); // prettier-ignore
 
   const handleSearchChange = event => {
     setSearchQuery(event.target.value);
