@@ -1,44 +1,52 @@
+/* eslint-disable jsx-a11y/accessible-emoji */
 import React, { useState } from 'react';
 import classNames from 'classnames';
-
 import './App.scss';
+
 import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
 
 const users = usersFromServer;
 const categories = categoriesFromServer;
-const productsFromServers = productsFromServer;
+const COLUMNS = ['ID', 'Product', 'Category', 'User'];
 
-const products = productsFromServers.map(product => {
-  const category = categories.find(
-    categorie => categorie.id === product.categoryId,
-  );
-
-  const user = users.find(oneUser => oneUser.id === category.ownerId);
+const products = productsFromServer.map(product => {
+  const category = categories.find(categorie => {
+    return categorie.id === product.categoryId;
+  });
+  const user = users.find(oneUser => {
+    return oneUser.id === category.ownerId;
+  });
 
   return {
-    id: product.id,
-    name: product.name,
-    user,
+    ...product,
     category,
+    user,
   };
 });
 
 export const App = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
-  const filteredProducts =
+  const filteredProductsForUsers =
     selectedUserId === null
       ? products
       : products.filter(product => product.user.id === selectedUserId);
 
-  const finalFilteredProducts =
-      searchQuery === ''
-        ? filteredProducts
-        : filteredProducts.filter(product =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase())); // prettier-ignore
+  const filteredProductsForCategories =
+    selectedCategories.length === 0
+      ? filteredProductsForUsers
+      : filteredProductsForUsers.filter(product =>
+        selectedCategories.includes(product.category.title)); // prettier-ignore
+
+  const filteredProductsForInput =
+    searchQuery === ''
+      ? filteredProductsForCategories
+      : filteredProductsForCategories.filter(product =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())); // prettier-ignore
 
   function handleSearchChange(event) {
     setSearchQuery(event.target.value);
@@ -48,13 +56,27 @@ export const App = () => {
     setSearchQuery('');
   };
 
-  const hasResults = finalFilteredProducts.length > 0;
+  const hasResults = filteredProductsForInput.length > 0;
 
   const handleResetAllFilters = () => {
     setSelectedUserId(null);
     setSearchQuery('');
+    setSelectedCategories([]);
   };
 
+  const handleCategoryClick = categoryTitle => {
+    setSelectedCategories(prevCategories => {
+      if (prevCategories.includes(categoryTitle)) {
+        return prevCategories.filter(categorie => categorie !== categoryTitle);
+      }
+
+      return [...prevCategories, categoryTitle];
+    });
+  };
+
+  const handleAllCategoriesClick = () => {
+    setSelectedCategories([]);
+  };
 
   return (
     <div className="section">
@@ -76,12 +98,11 @@ export const App = () => {
               >
                 All
               </a>
-
               {users.map(user => (
                 <a
+                  key={user.id}
                   data-cy="FilterUser"
                   href="#/"
-                  key={user.id}
                   className={classNames('panel-tabs__item', {
                     'is-active': selectedUserId === user.id,
                   })}
@@ -124,7 +145,10 @@ export const App = () => {
               <a
                 href="#/"
                 data-cy="AllCategories"
-                className="button is-success mr-6 is-outlined"
+                className={classNames('button', 'is-success', 'mr-6', {
+                  'is-outlined': selectedCategories.length > 0,
+                })}
+                onClick={handleAllCategoriesClick}
               >
                 All
               </a>
@@ -132,8 +156,11 @@ export const App = () => {
                 <a
                   key={categorie.id}
                   data-cy="Category"
-                  className="button mr-2 my-1 is-info"
+                  className={classNames('button', 'mr-2', 'my-1', {
+                    'is-info': selectedCategories.includes(categorie.title),
+                  })}
                   href="#/"
+                  onClick={() => handleCategoryClick(categorie.title)}
                 >
                   {categorie.title}
                 </a>
@@ -160,84 +187,55 @@ export const App = () => {
             </p>
           )}
 
-          <table
-            data-cy="ProductTable"
-            className="table is-striped is-narrow is-fullwidth"
-          >
-            <thead>
-              <tr>
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    ID
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort" />
+          {hasResults && (
+            <table
+              data-cy="ProductTable"
+              className="table is-striped is-narrow is-fullwidth"
+            >
+              <thead>
+                <tr>
+                  {COLUMNS.map(column => (
+                    <th key={column}>
+                      <span className="is-flex is-flex-wrap-nowrap">
+                        {column}
+                        <a href="#/">
+                          <span className="icon">
+                            <i data-cy="SortIcon" className="fas fa-sort" />
+                          </span>
+                        </a>
                       </span>
-                    </a>
-                  </span>
-                </th>
-
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    Product
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort-down" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
-
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    Category
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort-up" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
-
-                <th>
-                  <span className="is-flex is-flex-wrap-nowrap">
-                    User
-                    <a href="#/">
-                      <span className="icon">
-                        <i data-cy="SortIcon" className="fas fa-sort" />
-                      </span>
-                    </a>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {finalFilteredProducts.map(product => (
-                <tr data-cy="Product" key={product.id}>
-                  <td className="has-text-weight-bold" data-cy="ProductId">
-                    {product.id}
-                  </td>
-
-                  <td data-cy="ProductName">{product.name}</td>
-                  <td data-cy="ProductCategory">
-                    {product.category.icon} - {product.category.title}
-                  </td>
-
-                  <td
-                    data-cy="ProductUser"
-                    className={
-                      product.user.sex === 'm'
-                        ? 'has-text-link'
-                        : 'has-text-danger'
-                    }
-                  >
-                    {product.user.name}
-                  </td>
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {filteredProductsForInput.map(product => (
+                  <tr key={product.id} data-cy="Product">
+                    <td className="has-text-weight-bold" data-cy="ProductId">
+                      {product.id}
+                    </td>
+
+                    <td data-cy="ProductName">{product.name}</td>
+                    <td data-cy="ProductCategory">
+                      {product.category.icon} - {product.category.title}
+                    </td>
+
+                    <td
+                      data-cy="ProductUser"
+                      className={
+                        product.user.sex === 'm'
+                          ? 'has-text-link'
+                          : 'has-text-danger'
+                      }
+                    >
+                      {product.user.name}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
